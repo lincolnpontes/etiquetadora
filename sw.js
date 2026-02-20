@@ -1,8 +1,21 @@
-// Service Worker básico para forçar a instalação do PWA
+const CACHE_NAME = 'etiquetadora-restaurante-v1';
+
 self.addEventListener('install', (e) => {
-    console.log('[Service Worker] Instalado');
+    e.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll([
+                './',
+                './index.html',
+                './manifest.json'
+            ]);
+        })
+    );
 });
 
 self.addEventListener('fetch', (e) => {
-    // Apenas intercepta as requisições para passar na validação do PWA
+    e.respondWith(
+        caches.match(e.request).then((response) => {
+            return response || fetch(e.request);
+        })
+    );
 });
