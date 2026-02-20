@@ -1,7 +1,7 @@
 {
-  "name": "Etiquetadora Lab",
+  "name": "Etiquetadora",
   "short_name": "Etiquetas",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#f0f2f5",
   "theme_color": "#1565C0",
