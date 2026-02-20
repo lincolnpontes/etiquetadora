@@ -12,8 +12,8 @@
     <meta name="theme-color" content="#1565C0">
     <title>Etiquetadora</title>
     
-    <link rel="icon" sizes="192x192" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
+    <link rel="icon" sizes="192x192" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
 
     <script>
         if ('serviceWorker' in navigator) {
@@ -294,15 +294,15 @@
     function carregarBanco() {
         let defaultDB = {
             produtos: [
-                { codigo: 1, nome: "Carne de Sol", categoria: "Carnes", validadeDias: 5 },
-                { codigo: 2, nome: "Carne de Charque", categoria: "Carnes", validadeDias: 30 }
+                { codigo: 1, nome: "Hambúrguer Bovino", categoria: "Carnes", validadeDias: 5 },
+                { codigo: 2, nome: "Linguiça Artesanal", categoria: "Embutidos", validadeDias: 15 }
             ],
             categorias: [
                 { nome: "Carnes", cor: "#ffcccc", corTexto: "#000000" },
                 { nome: "Embutidos", cor: "#fff0b3", corTexto: "#000000" }
             ],
             operadores: [
-                { nome: "Balcão Principal", senha: "" }
+                { nome: "Cozinha 1", senha: "" }
             ],
             configs: { 
                 modo: "pdf", 
