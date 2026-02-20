@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiquetadora Térmica</title>
+    <style>
+        /* ESTILOS VISUAIS */
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 500px; background-color: #ffffff; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
+        
+        .header { background-color: #1565C0; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .header-title { flex: 1; font-size: 18px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-actions button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 10px; }
+        
+        .operator-bar { background-color: #1976D2; color: white; padding: 8px 15px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .operator-bar select { flex: 1; padding: 8px; border-radius: 4px; border: none; font-weight: bold; }
+
+        .search-box { background-color: #E3F2FD; padding: 15px; display: flex; gap: 10px; }
+        .search-box input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .search-box button { background-color: #1976D2; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        
+        .filters { padding: 10px 15px; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #eee; }
+        .chip { background-color: #e0e0e0; color: #333; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; border: 2px solid transparent; }
+        .chip.active { border: 2px solid #333; opacity: 0.9; }
+        
+        .list { padding: 0; margin: 0; list-style: none; padding-bottom: 20px; }
+        .item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .item:hover { background-color: #f9f9f9; }
+        .item-avatar { background-color: #BBDEFB; color: #1565C0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; }
+        .item-info { flex: 1; }
+        .item-title { font-weight: bold; font-size: 18px; margin-bottom: 4px; }
+        .item-subtitle { color: #666; font-size: 14px; }
+        .print-icon { color: #1976D2; font-size: 24px; }
+
+        /* MODAIS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #333; border-bottom: 2px solid #1976D2; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .form-group input[type="color"] { height: 45px; padding: 2px; cursor: pointer; width: 100%; }
+        
+        .qtd-control { display: flex; align-items: center; gap: 15px; }
+        .qtd-btn { background: #e0e0e0; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+        
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        
+        .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: #333; font-weight: bold; }
+        .btn-action { background: #1976D2; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-danger { background: #d32f2f; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-outline { background: #E3F2FD; color: #1976D2; border: 1px solid #1976D2; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 15px; }
+        .btn-outline-icon { font-size: 28px; }
+
+        .gerenciar-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .gerenciar-info { flex: 1; font-size: 14px; }
+        .gerenciar-actions button { background: none; border: none; cursor: pointer; font-size: 20px; margin-left: 10px; }
+        
+        /* Box para mostrar as cores de fundo e texto juntas no menu de gestão */
+        .color-preview { display: inline-block; padding: 2px 8px; border-radius: 12px; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc; font-weight: bold; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-title" id="appTitle">Etiquetadora</div>
+        <div class="header-actions">
+            <button onclick="abrirLoginAdmin()" title="Painel e Configurações">⚙️</button>
+        </div>
+    </div>
+    
+    <div class="operator-bar">
+        <span>Operador(a):</span>
+        <select id="seletorOperador" onchange="verificarTrocaOperador(this)"></select>
+    </div>
+
+    <div class="search-box">
+        <input type="number" id="buscaCodigo" placeholder="Digitar Código (Ex: 2)">
+        <button onclick="buscarPorCodigo()">Buscar</button>
+    </div>
+
+    <div class="filters" id="containerFiltros"></div>
+    <ul class="list" id="listaProdutos"></ul>
+</div>
+
+<div class="modal-overlay" id="modalLoginAdmin">
+    <div class="modal">
+        <div class="modal-title">Acesso Restrito</div>
+        <div class="form-group">
+            <label>Senha do Administrador:</label>
+            <input type="password" id="senhaAdmin" placeholder="Digite a senha">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalLoginAdmin')">Cancelar</button>
+            <button class="btn-action" onclick="validarSenhaAdmin()">Entrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalPainelUnificado">
+    <div class="modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1976D2; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 id="displayEstabelecimento" style="margin: 0; font-size: 18px; color: #333;"></h2>
+            <button onclick="editarEstabelecimento()" title="Editar Nome" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #1976D2;">✏️</button>
+        </div>
+
+        <h3 style="font-size: 16px; color: #555; margin-bottom: 10px;">Painel de Gestão</h3>
+        <button class="btn-outline" onclick="abrirGerenciar('produtos')">
+            <span class="btn-outline-icon">📦</span> Gerenciar Produtos
+        </button>
+        <button class="btn-outline" onclick="abrirGerenciar('categorias')">
+            <span class="btn-outline-icon">🏷️</span> Gerenciar Categorias
+        </button>
+        <button class="btn-outline" onclick="abrirGerenciar('operadores')">
+            <span class="btn-outline-icon">👥</span> Gerenciar Operadores(as)
+        </button>
+
+        <h3 style="font-size: 16px; color: #555; margin-top: 25px; margin-bottom: 10px;">Configurações do Sistema</h3>
+        <div class="form-group">
+            <label>Destino da Impressão:</label>
+            <select id="configModo" onchange="salvarModoRapido()">
+                <option value="pdf">Visualizar na Tela (Gerar PDF)</option>
+                <option value="rawbt">App Externo (Imprimir via RawBT)</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button class="btn-outline" style="margin: 0; flex: 1; justify-content: center;" onclick="exportarBanco()">⬇️ Exportar</button>
+            <button class="btn-outline" style="margin: 0; flex: 1; justify-content: center;" onclick="document.getElementById('fileImport').click()">⬆️ Importar</button>
+            <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBanco(event)">
+        </div>
+        <button class="btn-danger" onclick="restaurarPadroes()">Restaurar Sistema (Apagar Tudo)</button>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalPainelUnificado')">Fechar Painel</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalSenhaOperador">
+    <div class="modal">
+        <div class="modal-title">Confirmação de Identidade</div>
+        <p style="margin-top:0; color:#555;">Este operador(a) exige senha.</p>
+        <input type="hidden" id="operadorAlvo">
+        <div class="form-group">
+            <label>Senha:</label>
+            <input type="password" id="senhaTrocaOperador">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="cancelarTrocaOperador()">Cancelar</button>
+            <button class="btn-action" onclick="confirmarTrocaOperador()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalListagem">
+    <div class="modal">
+        <div class="modal-title" id="tituloListagem">Gerenciar</div>
+        <button class="btn-action" id="btnNovoListagem" style="width: 100%; margin-bottom: 15px;">+ Novo</button>
+        <div id="conteudoListagem" style="max-height: 50vh; overflow-y: auto; padding-right: 5px;"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="voltarPainelUnificado()">Voltar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalFormProduto">
+    <div class="modal">
+        <div class="modal-title">Produto</div>
+        <input type="hidden" id="prodCodigoOriginal">
+        <div class="form-group">
+            <label>Código Numérico:</label>
+            <input type="number" id="prodCodigo">
+        </div>
+        <div class="form-group">
+            <label>Nome do Produto:</label>
+            <input type="text" id="prodNome">
+        </div>
+        <div class="form-group">
+            <label>Categoria:</label>
+            <select id="prodCategoria"></select>
+        </div>
+        <div class="form-group">
+            <label>Validade em Dias:</label>
+            <input type="number" id="prodValidade">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalFormProduto'); abrirGerenciar('produtos')">Cancelar</button>
+            <button class="btn-action" onclick="salvarProduto()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalFormCategoria">
+    <div class="modal">
+        <div class="modal-title">Categoria</div>
+        <input type="hidden" id="catNomeOriginal">
+        <div class="form-group">
+            <label>Nome da Categoria:</label>
+            <input type="text" id="catNome">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Cor do Fundo:</label>
+                <input type="color" id="catCor" value="#1976D2">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Cor do Texto:</label>
+                <input type="color" id="catCorTexto" value="#ffffff">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalFormCategoria'); abrirGerenciar('categorias')">Cancelar</button>
+            <button class="btn-action" onclick="salvarCategoria()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalFormOperador">
+    <div class="modal">
+        <div class="modal-title">Operador(a)</div>
+        <input type="hidden" id="opNomeOriginal">
+        <div class="form-group">
+            <label>Nome do Operador(a):</label>
+            <input type="text" id="opNome">
+        </div>
+        <div class="form-group">
+            <label>Senha (Deixe em branco para sem senha):</label>
+            <input type="text" id="opSenha" placeholder="Opcional">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalFormOperador'); abrirGerenciar('operadores')">Cancelar</button>
+            <button class="btn-action" onclick="salvarOperador()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalImprimir">
+    <div class="modal">
+        <div class="modal-title" id="imprimirNomeProduto">Produto</div>
+        <input type="hidden" id="imprimirCodigoProduto">
+        <div class="form-group">
+            <label>Quantidade de Etiquetas:</label>
+            <div class="qtd-control">
+                <button class="qtd-btn" onclick="mudarQtd(-1)">-</button>
+                <span id="imprimirQtd" style="font-size: 20px; font-weight: bold;">1</span>
+                <button class="qtd-btn" onclick="mudarQtd(1)">+</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Peso em gramas (Opcional):</label>
+            <input type="number" id="imprimirPeso" placeholder="0 g">
+        </div>
+        <div class="form-group">
+            <label>Data de Validade Final:</label>
+            <input type="date" id="imprimirValidade">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalImprimir')">Cancelar</button>
+            <button class="btn-action" onclick="processarImpressao()">🖨️ IMPRIMIR</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ESTADO DA APLICAÇÃO E BANCO DE DADOS ---
+    let db = carregarBanco();
+    let categoriaAtual = null;
+    let quantidadeAtual = 1;
+    let operadorAnteriorSelect = null;
+
+    function carregarBanco() {
+        let defaultDB = {
+            produtos: [
+                { codigo: 1, nome: "Carne de Sol", categoria: "Carnes", validadeDias: 5 },
+                { codigo: 2, nome: "Carne de Charque", categoria: "Carnes", validadeDias: 30 }
+            ],
+            categorias: [
+                { nome: "Carnes", cor: "#ffcccc", corTexto: "#000000" },
+                { nome: "Embutidos", cor: "#fff0b3", corTexto: "#000000" }
+            ],
+            operadores: [
+                { nome: "Balcão Principal", senha: "" }
+            ],
+            configs: { 
+                modo: "pdf", 
+                estabelecimento: "UFPB - Laboratório de Carnes"
+            }
+        };
+
+        let local = JSON.parse(localStorage.getItem('etiquetadora_db'));
+        return local || defaultDB;
+    }
+
+    function salvarBancoLocal(dados = db) {
+        localStorage.setItem('etiquetadora_db', JSON.stringify(dados));
+    }
+
+    // --- INICIALIZAÇÃO ---
+    function iniciar() {
+        if(!db.configs.estabelecimento) db.configs.estabelecimento = "Nome do Estabelecimento";
+        
+        atualizarTituloAplicativo();
+        renderizarOperadores();
+        renderizarFiltros();
+        renderizarLista();
+    }
+
+    function atualizarTituloAplicativo() {
+        document.getElementById('appTitle').innerText = "Etiquetadora - " + db.configs.estabelecimento;
+    }
+
+    function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // --- PAINEL UNIFICADO (ADMIN + CONFIG) ---
+    function abrirLoginAdmin() {
+        document.getElementById('senhaAdmin').value = '';
+        document.getElementById('modalLoginAdmin').style.display = 'flex';
+    }
+
+    function validarSenhaAdmin() {
+        if(document.getElementById('senhaAdmin').value === "1999") {
+            fecharModal('modalLoginAdmin');
+            document.getElementById('displayEstabelecimento').innerText = db.configs.estabelecimento;
+            document.getElementById('configModo').value = db.configs.modo;
+            document.getElementById('modalPainelUnificado').style.display = 'flex';
+        } else {
+            alert("Senha incorreta!");
+        }
+    }
+
+    function voltarPainelUnificado() {
+        fecharModal('modalListagem');
+        document.getElementById('modalPainelUnificado').style.display = 'flex';
+    }
+
+    function editarEstabelecimento() {
+        let novoNome = prompt("Digite o nome do estabelecimento:", db.configs.estabelecimento);
+        if(novoNome && novoNome.trim() !== "") {
+            db.configs.estabelecimento = novoNome.trim();
+            document.getElementById('displayEstabelecimento').innerText = db.configs.estabelecimento;
+            atualizarTituloAplicativo();
+            salvarBancoLocal();
+        }
+    }
+
+    function salvarModoRapido() {
+        db.configs.modo = document.getElementById('configModo').value;
+        salvarBancoLocal();
+    }
+
+    function restaurarPadroes() {
+        if(confirm("Tem certeza? Isso apagará todos os dados criados.")) {
+            localStorage.removeItem('etiquetadora_db');
+            location.reload();
+        }
+    }
+
+    // --- FUNÇÕES DE IMPORT/EXPORT ---
+    function exportarBanco() {
+        const dataStr = JSON.stringify(db);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_etiquetadora_${new Date().getTime()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importarBanco(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const novoDB = JSON.parse(e.target.result);
+                if(novoDB.produtos && novoDB.categorias && novoDB.operadores) {
+                    db = novoDB;
+                    salvarBancoLocal();
+                    alert("Banco de dados restaurado com sucesso!");
+                    location.reload();
+                } else { alert("Arquivo inválido."); }
+            } catch (err) { alert("Erro ao ler o arquivo."); }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- OPERADORES (TELA INICIAL) ---
+    function renderizarOperadores() {
+        const seletor = document.getElementById('seletorOperador');
+        seletor.innerHTML = '';
+        db.operadores.forEach(op => { seletor.innerHTML += `<option value="${op.nome}">${op.nome}</option>`; });
+        
+        const ultimoOperador = localStorage.getItem('etiquetadora_operadorAtual');
+        if(ultimoOperador && db.operadores.find(o => o.nome === ultimoOperador)) {
+            seletor.value = ultimoOperador;
+            operadorAnteriorSelect = ultimoOperador;
+        } else if (db.operadores.length > 0) {
+            operadorAnteriorSelect = db.operadores[0].nome;
+        }
+    }
+
+    function verificarTrocaOperador(selectElement) {
+        const novoNome = selectElement.value;
+        const op = db.operadores.find(o => o.nome === novoNome);
+        
+        if(op && op.senha !== "") {
+            document.getElementById('operadorAlvo').value = novoNome;
+            document.getElementById('senhaTrocaOperador').value = '';
+            document.getElementById('modalSenhaOperador').style.display = 'flex';
+        } else {
+            operadorAnteriorSelect = novoNome;
+            localStorage.setItem('etiquetadora_operadorAtual', novoNome);
+        }
+    }
+
+    function confirmarTrocaOperador() {
+        const nomeAlvo = document.getElementById('operadorAlvo').value;
+        const senhaDigitada = document.getElementById('senhaTrocaOperador').value;
+        const op = db.operadores.find(o => o.nome === nomeAlvo);
+
+        if(op && op.senha === senhaDigitada) {
+            operadorAnteriorSelect = nomeAlvo;
+            localStorage.setItem('etiquetadora_operadorAtual', nomeAlvo);
+            fecharModal('modalSenhaOperador');
+        } else { alert("Senha incorreta!"); }
+    }
+
+    function cancelarTrocaOperador() {
+        document.getElementById('seletorOperador').value = operadorAnteriorSelect;
+        fecharModal('modalSenhaOperador');
+    }
+
+    // --- RENDERIZAÇÃO E FILTROS ---
+    function renderizarFiltros() {
+        let html = `<div class="chip ${categoriaAtual === null ? 'active' : ''}" style="${categoriaAtual === null ? 'background:#ccc; color:#000;' : ''}" onclick="filtrarCategoria(null)">TODOS</div>`;
+        db.categorias.forEach(cat => { 
+            const isActive = categoriaAtual === cat.nome;
+            const corTxt = cat.corTexto || '#000000';
+            html += `<div class="chip ${isActive ? 'active' : ''}" style="background-color: ${cat.cor}; color: ${corTxt};" onclick="filtrarCategoria('${cat.nome}')">${cat.nome}</div>`; 
+        });
+        document.getElementById('containerFiltros').innerHTML = html;
+    }
+
+    function filtrarCategoria(cat) { categoriaAtual = cat; renderizarFiltros(); renderizarLista(); }
+
+    function renderizarLista() {
+        const lista = document.getElementById('listaProdutos');
+        lista.innerHTML = '';
+        let filtrados = categoriaAtual === null ? db.produtos : db.produtos.filter(p => p.categoria === categoriaAtual);
+        filtrados.sort((a, b) => a.codigo - b.codigo);
+        filtrados.forEach(p => {
+            const catObj = db.categorias.find(c => c.nome === p.categoria);
+            const cor = catObj ? catObj.cor : '#eee';
+            const corTxt = catObj && catObj.corTexto ? catObj.corTexto : '#333';
+            lista.innerHTML += `
+                <li class="item" onclick="abrirModalImprimir(${p.codigo})">
+                    <div class="item-avatar" style="background-color: ${cor}; color: ${corTxt};">${p.codigo}</div>
+                    <div class="item-info">
+                        <div class="item-title">${p.nome}</div>
+                        <div class="item-subtitle">${p.categoria} • Validade: ${p.validadeDias} dias</div>
+                    </div>
+                    <div class="print-icon">🖨️</div>
+                </li>
+            `;
+        });
+    }
+
+    function buscarPorCodigo() {
+        const cod = parseInt(document.getElementById('buscaCodigo').value);
+        if(isNaN(cod)) return;
+        const produto = db.produtos.find(p => p.codigo === cod);
+        if(produto) { abrirModalImprimir(produto.codigo); document.getElementById('buscaCodigo').value = ''; } 
+        else alert("Produto não encontrado!");
+    }
+
+    // --- CRUD GENÉRICO (GESTÃO) ---
+    function abrirGerenciar(tipo) {
+        fecharModal('modalPainelUnificado');
+        fecharModal('modalFormProduto');
+        fecharModal('modalFormCategoria');
+        fecharModal('modalFormOperador');
+        
+        const lista = document.getElementById('conteudoListagem');
+        const btnNovo = document.getElementById('btnNovoListagem');
+        const titulo = document.getElementById('tituloListagem');
+        lista.innerHTML = '';
+
+        if(tipo === 'produtos') {
+            titulo.innerText = "Gerenciar Produtos";
+            btnNovo.onclick = () => abrirFormProduto(null);
+            let ordenados = [...db.produtos].sort((a, b) => a.codigo - b.codigo);
+            ordenados.forEach(p => {
+                lista.innerHTML += `<div class="gerenciar-item"><div class="gerenciar-info"><strong>${p.codigo} - ${p.nome}</strong><br><span style="color:#666">${p.categoria} | ${p.validadeDias} dias</span></div><div class="gerenciar-actions"><button onclick="abrirFormProduto(${p.codigo})">✏️</button><button onclick="excluirItem('produtos', ${p.codigo})">🗑️</button></div></div>`;
+            });
+        } else if (tipo === 'categorias') {
+            titulo.innerText = "Gerenciar Categorias";
+            btnNovo.onclick = () => abrirFormCategoria(null);
+            db.categorias.forEach(c => {
+                const corTxt = c.corTexto || '#000000';
+                lista.innerHTML += `<div class="gerenciar-item"><div class="gerenciar-info"><span class="color-preview" style="background:${c.cor}; color:${corTxt}">${c.nome}</span></div><div class="gerenciar-actions"><button onclick="abrirFormCategoria('${c.nome}')">✏️</button><button onclick="excluirItem('categorias', '${c.nome}')">🗑️</button></div></div>`;
+            });
+        } else if (tipo === 'operadores') {
+            titulo.innerText = "Gerenciar Operadores(as)";
+            btnNovo.onclick = () => abrirFormOperador(null);
+            db.operadores.forEach(o => {
+                let statusSenha = o.senha === "" ? "Sem Senha" : "Com Senha";
+                lista.innerHTML += `<div class="gerenciar-item"><div class="gerenciar-info"><strong>${o.nome}</strong><br><span style="color:#666">${statusSenha}</span></div><div class="gerenciar-actions"><button onclick="abrirFormOperador('${o.nome}')">✏️</button><button onclick="excluirItem('operadores', '${o.nome}')">🗑️</button></div></div>`;
+            });
+        }
+        document.getElementById('modalListagem').style.display = 'flex';
+    }
+
+    function excluirItem(tipo, id) {
+        if(!confirm("Certeza que deseja excluir?")) return;
+        if(tipo === 'produtos') db.produtos = db.produtos.filter(i => i.codigo !== id);
+        if(tipo === 'categorias') db.categorias = db.categorias.filter(i => i.nome !== id);
+        if(tipo === 'operadores') db.operadores = db.operadores.filter(i => i.nome !== id);
+        salvarBancoLocal(); iniciar(); abrirGerenciar(tipo);
+    }
+
+    // FORM: Produto
+    function abrirFormProduto(codigoOriginal) {
+        fecharModal('modalListagem');
+        const combo = document.getElementById('prodCategoria');
+        combo.innerHTML = '';
+        db.categorias.forEach(c => combo.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
+
+        if(codigoOriginal) {
+            const p = db.produtos.find(x => x.codigo === codigoOriginal);
+            document.getElementById('prodCodigoOriginal').value = p.codigo;
+            document.getElementById('prodCodigo').value = p.codigo;
+            document.getElementById('prodNome').value = p.nome;
+            document.getElementById('prodCategoria').value = p.categoria;
+            document.getElementById('prodValidade').value = p.validadeDias;
+        } else {
+            document.getElementById('prodCodigoOriginal').value = '';
+            document.getElementById('prodCodigo').value = '';
+            document.getElementById('prodNome').value = '';
+            document.getElementById('prodValidade').value = '';
+        }
+        document.getElementById('modalFormProduto').style.display = 'flex';
+    }
+
+    function salvarProduto() {
+        const codOriginal = document.getElementById('prodCodigoOriginal').value;
+        const cod = parseInt(document.getElementById('prodCodigo').value);
+        const nome = document.getElementById('prodNome').value.trim();
+        const cat = document.getElementById('prodCategoria').value;
+        const val = parseInt(document.getElementById('prodValidade').value);
+
+        if(!cod || !nome || !cat || isNaN(val)) return alert("Preencha tudo!");
+        if(codOriginal === "" && db.produtos.find(p => p.codigo === cod)) return alert("Código já existe!");
+        if(codOriginal !== "" && parseInt(codOriginal) !== cod && db.produtos.find(p => p.codigo === cod)) return alert("Código já existe!");
+
+        let obj = { codigo: cod, nome: nome, categoria: cat, validadeDias: val };
+        if(codOriginal !== "") {
+            const idx = db.produtos.findIndex(p => p.codigo === parseInt(codOriginal));
+            db.produtos[idx] = obj;
+        } else { db.produtos.push(obj); }
+        salvarBancoLocal(); iniciar(); abrirGerenciar('produtos');
+    }
+
+    // FORM: Categoria
+    function abrirFormCategoria(nomeOriginal) {
+        fecharModal('modalListagem');
+        if(nomeOriginal) {
+            const c = db.categorias.find(x => x.nome === nomeOriginal);
+            document.getElementById('catNomeOriginal').value = c.nome;
+            document.getElementById('catNome').value = c.nome;
+            document.getElementById('catCor').value = c.cor;
+            document.getElementById('catCorTexto').value = c.corTexto || '#000000';
+        } else {
+            document.getElementById('catNomeOriginal').value = '';
+            document.getElementById('catNome').value = '';
+            document.getElementById('catCor').value = '#1976D2';
+            document.getElementById('catCorTexto').value = '#ffffff';
+        }
+        document.getElementById('modalFormCategoria').style.display = 'flex';
+    }
+
+    function salvarCategoria() {
+        const nomeOrig = document.getElementById('catNomeOriginal').value;
+        const nome = document.getElementById('catNome').value.trim();
+        const cor = document.getElementById('catCor').value;
+        const corTexto = document.getElementById('catCorTexto').value;
+
+        if(!nome) return alert("Preencha o nome!");
+        if(nomeOrig === "" && db.categorias.find(c => c.nome.toLowerCase() === nome.toLowerCase())) return alert("Categoria já existe!");
+
+        if(nomeOrig !== "") {
+            const idx = db.categorias.findIndex(c => c.nome === nomeOrig);
+            db.categorias[idx] = { nome, cor, corTexto };
+            db.produtos.forEach(p => { if(p.categoria === nomeOrig) p.categoria = nome; });
+        } else { db.categorias.push({ nome, cor, corTexto }); }
+        salvarBancoLocal(); iniciar(); abrirGerenciar('categorias');
+    }
+
+    // FORM: Operador
+    function abrirFormOperador(nomeOriginal) {
+        fecharModal('modalListagem');
+        if(nomeOriginal) {
+            const o = db.operadores.find(x => x.nome === nomeOriginal);
+            document.getElementById('opNomeOriginal').value = o.nome;
+            document.getElementById('opNome').value = o.nome;
+            document.getElementById('opSenha').value = o.senha;
+        } else {
+            document.getElementById('opNomeOriginal').value = '';
+            document.getElementById('opNome').value = '';
+            document.getElementById('opSenha').value = '';
+        }
+        document.getElementById('modalFormOperador').style.display = 'flex';
+    }
+
+    function salvarOperador() {
+        const nomeOrig = document.getElementById('opNomeOriginal').value;
+        const nome = document.getElementById('opNome').value.trim();
+        const senha = document.getElementById('opSenha').value.trim();
+
+        if(!nome) return alert("Preencha o nome!");
+        if(nomeOrig === "" && db.operadores.find(o => o.nome.toLowerCase() === nome.toLowerCase())) return alert("Operador(a) já existe!");
+
+        if(nomeOrig !== "") {
+            const idx = db.operadores.findIndex(o => o.nome === nomeOrig);
+            db.operadores[idx] = { nome, senha };
+            if(localStorage.getItem('etiquetadora_operadorAtual') === nomeOrig) localStorage.setItem('etiquetadora_operadorAtual', nome);
+        } else { db.operadores.push({ nome, senha }); }
+        salvarBancoLocal(); iniciar(); abrirGerenciar('operadores');
+    }
+
+    // --- LÓGICA DE IMPRESSÃO ---
+    function abrirModalImprimir(codigo) {
+        const produto = db.produtos.find(p => p.codigo === codigo);
+        quantidadeAtual = 1;
+        let dataValidade = new Date();
+        dataValidade.setDate(dataValidade.getDate() + produto.validadeDias);
+        document.getElementById('imprimirCodigoProduto').value = produto.codigo;
+        document.getElementById('imprimirNomeProduto').innerText = "Imprimir: " + produto.nome;
+        document.getElementById('imprimirQtd').innerText = quantidadeAtual;
+        document.getElementById('imprimirPeso').value = '';
+        document.getElementById('imprimirValidade').value = dataValidade.toISOString().split('T')[0];
+        document.getElementById('modalImprimir').style.display = 'flex';
+    }
+
+    function mudarQtd(valor) {
+        if(quantidadeAtual + valor > 0) { quantidadeAtual += valor; document.getElementById('imprimirQtd').innerText = quantidadeAtual; }
+    }
+
+    function processarImpressao() {
+        const codigo = parseInt(document.getElementById('imprimirCodigoProduto').value);
+        const produto = db.produtos.find(p => p.codigo === codigo);
+        const inputPeso = document.getElementById('imprimirPeso').value.trim();
+        const dataValidadeInput = document.getElementById('imprimirValidade').value;
+        const operador = document.getElementById('seletorOperador').value;
+        const estabelecimento = db.configs.estabelecimento;
+        
+        const pesoFormatado = inputPeso === "" ? "-" : `${inputPeso} g`;
+        const partesData = dataValidadeInput.split('-');
+        const dataValidadeBR = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+        
+        const hoje = new Date();
+        const dataManipulacaoBR = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+        const horaBR = `${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}`;
+
+        fecharModal('modalImprimir');
+
+        if(db.configs.modo === 'pdf') {
+            gerarEtiquetaPDF(produto, pesoFormatado, dataManipulacaoBR, horaBR, dataValidadeBR, quantidadeAtual, operador, estabelecimento);
+        } else {
+            enviarParaRawBT(produto, pesoFormatado, dataManipulacaoBR, horaBR, dataValidadeBR, quantidadeAtual, operador, estabelecimento);
+        }
+    }
+
+    // VISUALIZAÇÃO EM PDF (Textos ajustados e Validade Destacada)
+    function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
+        let printWindow = window.open('', '', 'width=350,height=500');
+        let htmlContent = `
+            <html><head><style>
+                body { margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background: #e0e0e0; font-family: sans-serif; }
+                .etiqueta { width: 300px; background: white; margin: 10px; padding: 15px; box-sizing: border-box; }
+                h2 { text-align: center; font-size: 20px; margin: 5px 0; text-transform: uppercase; }
+                .linha { border-top: 1px solid #000; margin: 8px 0; }
+                p { margin: 4px 0; font-size: 14px; }
+                .val-destaque { font-size: 20px; font-weight: bold; } /* Destaque para a data de validade */
+                .footer { font-size: 13px; text-align: center; margin-top: 8px; }
+                
+                @media print {
+                    body { background: white; }
+                    .etiqueta { margin: 0; width: auto; page-break-after: always; padding: 5px; }
+                }
+            </style></head><body>
+        `;
+        for(let i = 0; i < qtd; i++) {
+            htmlContent += `
+                <div class="etiqueta">
+                    <h2>${produto.nome}</h2>
+                    <div class="linha"></div>
+                    <p><b>Manipulado:</b> ${dataMan}</p>
+                    <p><b>Hora:</b> ${hora}</p>
+                    <p><b>Peso:</b> ${peso}</p>
+                    <p><b>Validade:</b> <span class="val-destaque">${dataVal}</span></p>
+                    <div class="linha"></div>
+                    <div class="footer">Operador(a): ${operador}<br><b>${estabelecimento}</b></div>
+                </div>
+            `;
+        }
+        htmlContent += `<script>window.onload = function() { window.print(); window.close(); }<\/script></body></html>`;
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+    }
+
+    // ENVIO PARA RAWBT
+    function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
+        let textoImpressao = "";
+        for(let i = 0; i < qtd; i++) {
+            textoImpressao += "--------------------------------\n";
+            textoImpressao += produto.nome.toUpperCase() + "\n";
+            textoImpressao += "--------------------------------\n";
+            textoImpressao += "<b>Manipulado:</b> " + dataMan + "\n";
+            textoImpressao += "<b>Hora:</b> " + hora + "\n";
+            textoImpressao += "<b>Peso:</b> " + peso + "\n";
+            // O uso do <big> ou <font> é compatível com o parser html interno do rawbt
+            textoImpressao += "<b>Validade:</b> <big>" + dataVal + "</big>\n";
+            textoImpressao += "--------------------------------\n";
+            textoImpressao += "Operador(a): " + operador + "\n";
+            textoImpressao += estabelecimento + "\n";
+            textoImpressao += "\n\n\n";
+        }
+        const urlRawBT = "intent:" + encodeURI(textoImpressao) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+        window.location.href = urlRawBT;
+    }
+
+    iniciar();
+</script>
+
+</body>
+</html>
