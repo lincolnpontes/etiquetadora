@@ -15,6 +15,16 @@
     <link rel="icon" sizes="192x192" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
 
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registrado com sucesso!'))
+                .catch(err => console.log('Erro ao registrar Service Worker:', err));
+            });
+        }
+    </script>
+
     <style>
         /* ESTILOS VISUAIS */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; }
@@ -296,7 +306,7 @@
             ],
             configs: { 
                 modo: "pdf", 
-                estabelecimento: "Laboratório de Carnes"
+                estabelecimento: "Restaurante"
             }
         };
 
@@ -342,7 +352,6 @@
     function abrirLoginAdmin() {
         document.getElementById('senhaAdmin').value = '';
         document.getElementById('modalLoginAdmin').style.display = 'flex';
-        // Foco automático no campo de senha (pequeno atraso para dar tempo da janela aparecer)
         setTimeout(function() {
             document.getElementById('senhaAdmin').focus();
         }, 100);
@@ -412,8 +421,8 @@
                     salvarBancoLocal();
                     alert("Banco de dados restaurado com sucesso!");
                     location.reload();
-                } else { alert("Ficheiro inválido."); }
-            } catch (err) { alert("Erro ao ler o ficheiro."); }
+                } else { alert("Arquivo inválido."); }
+            } catch (err) { alert("Erro ao ler o arquivo."); }
         };
         reader.readAsText(file);
     }
@@ -774,4 +783,3 @@
 
 </body>
 </html>
-
