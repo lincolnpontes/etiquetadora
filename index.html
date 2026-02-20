@@ -2,8 +2,19 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etiquetadora Térmica</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiRXRpcXVldGFkb3JhIiwic2hvcnRfbmFtZSI6IkV0aXF1ZXRhcyIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZjBmMmY1IiwidGhlbWVfY29sb3ciOiIjMTU2NUMwIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vdXBsb2FkLndpa2ltZWRpYS5vcmcvd2lraXBlZGlhL2NvbW1vbnMvdGh1bWIvZS9lOC9BaWdhX3ByaW50ZXIuc3ZnLzUxMnB4LUFpZ2FfcHJpbnRlci5zdmcucG5nIiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3BuZyIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1565C0">
+    <title>Etiquetadora</title>
+    
+    <link rel="icon" sizes="192x192" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png">
+
     <style>
         /* ESTILOS VISUAIS */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; }
@@ -57,7 +68,6 @@
         .gerenciar-info { flex: 1; font-size: 14px; }
         .gerenciar-actions button { background: none; border: none; cursor: pointer; font-size: 20px; margin-left: 10px; }
         
-        /* Box para mostrar as cores de fundo e texto juntas no menu de gestão */
         .color-preview { display: inline-block; padding: 2px 8px; border-radius: 12px; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc; font-weight: bold; font-size: 12px; }
     </style>
 </head>
@@ -90,7 +100,7 @@
         <div class="modal-title">Acesso Restrito</div>
         <div class="form-group">
             <label>Senha do Administrador:</label>
-            <input type="password" id="senhaAdmin" placeholder="Digite a senha">
+            <input type="password" id="senhaAdmin" placeholder="Digite a senha" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="fecharModal('modalLoginAdmin')">Cancelar</button>
@@ -121,7 +131,7 @@
         <div class="form-group">
             <label>Destino da Impressão:</label>
             <select id="configModo" onchange="salvarModoRapido()">
-                <option value="pdf">Visualizar na Tela (Gerar PDF)</option>
+                <option value="pdf">Visualizar no Ecrã (Gerar PDF)</option>
                 <option value="rawbt">App Externo (Imprimir via RawBT)</option>
             </select>
         </div>
@@ -146,7 +156,7 @@
         <input type="hidden" id="operadorAlvo">
         <div class="form-group">
             <label>Senha:</label>
-            <input type="password" id="senhaTrocaOperador">
+            <input type="password" id="senhaTrocaOperador" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="cancelarTrocaOperador()">Cancelar</button>
@@ -228,7 +238,7 @@
         </div>
         <div class="form-group">
             <label>Senha (Deixe em branco para sem senha):</label>
-            <input type="text" id="opSenha" placeholder="Opcional">
+            <input type="text" id="opSenha" placeholder="Opcional" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="fecharModal('modalFormOperador'); abrirGerenciar('operadores')">Cancelar</button>
@@ -286,7 +296,7 @@
             ],
             configs: { 
                 modo: "pdf", 
-                estabelecimento: "UFPB - Laboratório de Carnes"
+                estabelecimento: "Laboratório de Carnes"
             }
         };
 
@@ -306,6 +316,20 @@
         renderizarOperadores();
         renderizarFiltros();
         renderizarLista();
+        
+        // Listener para o botão Enter na senha do Admin
+        document.getElementById('senhaAdmin').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                validarSenhaAdmin();
+            }
+        });
+        
+        // Listener para o botão Enter na senha de Troca de Operador
+        document.getElementById('senhaTrocaOperador').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                confirmarTrocaOperador();
+            }
+        });
     }
 
     function atualizarTituloAplicativo() {
@@ -318,6 +342,10 @@
     function abrirLoginAdmin() {
         document.getElementById('senhaAdmin').value = '';
         document.getElementById('modalLoginAdmin').style.display = 'flex';
+        // Foco automático no campo de senha (pequeno atraso para dar tempo da janela aparecer)
+        setTimeout(function() {
+            document.getElementById('senhaAdmin').focus();
+        }, 100);
     }
 
     function validarSenhaAdmin() {
@@ -328,6 +356,8 @@
             document.getElementById('modalPainelUnificado').style.display = 'flex';
         } else {
             alert("Senha incorreta!");
+            document.getElementById('senhaAdmin').value = '';
+            document.getElementById('senhaAdmin').focus();
         }
     }
 
@@ -382,8 +412,8 @@
                     salvarBancoLocal();
                     alert("Banco de dados restaurado com sucesso!");
                     location.reload();
-                } else { alert("Arquivo inválido."); }
-            } catch (err) { alert("Erro ao ler o arquivo."); }
+                } else { alert("Ficheiro inválido."); }
+            } catch (err) { alert("Erro ao ler o ficheiro."); }
         };
         reader.readAsText(file);
     }
@@ -411,6 +441,9 @@
             document.getElementById('operadorAlvo').value = novoNome;
             document.getElementById('senhaTrocaOperador').value = '';
             document.getElementById('modalSenhaOperador').style.display = 'flex';
+            setTimeout(function() {
+                document.getElementById('senhaTrocaOperador').focus();
+            }, 100);
         } else {
             operadorAnteriorSelect = novoNome;
             localStorage.setItem('etiquetadora_operadorAtual', novoNome);
@@ -426,7 +459,11 @@
             operadorAnteriorSelect = nomeAlvo;
             localStorage.setItem('etiquetadora_operadorAtual', nomeAlvo);
             fecharModal('modalSenhaOperador');
-        } else { alert("Senha incorreta!"); }
+        } else { 
+            alert("Senha incorreta!");
+            document.getElementById('senhaTrocaOperador').value = '';
+            document.getElementById('senhaTrocaOperador').focus();
+        }
     }
 
     function cancelarTrocaOperador() {
@@ -674,7 +711,7 @@
         }
     }
 
-    // VISUALIZAÇÃO EM PDF (Textos ajustados e Validade Destacada)
+    // VISUALIZAÇÃO EM PDF
     function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
         let printWindow = window.open('', '', 'width=350,height=500');
         let htmlContent = `
@@ -684,7 +721,7 @@
                 h2 { text-align: center; font-size: 20px; margin: 5px 0; text-transform: uppercase; }
                 .linha { border-top: 1px solid #000; margin: 8px 0; }
                 p { margin: 4px 0; font-size: 14px; }
-                .val-destaque { font-size: 20px; font-weight: bold; } /* Destaque para a data de validade */
+                .val-destaque { font-size: 20px; font-weight: bold; }
                 .footer { font-size: 13px; text-align: center; margin-top: 8px; }
                 
                 @media print {
@@ -722,7 +759,6 @@
             textoImpressao += "<b>Manipulado:</b> " + dataMan + "\n";
             textoImpressao += "<b>Hora:</b> " + hora + "\n";
             textoImpressao += "<b>Peso:</b> " + peso + "\n";
-            // O uso do <big> ou <font> é compatível com o parser html interno do rawbt
             textoImpressao += "<b>Validade:</b> <big>" + dataVal + "</big>\n";
             textoImpressao += "--------------------------------\n";
             textoImpressao += "Operador(a): " + operador + "\n";
