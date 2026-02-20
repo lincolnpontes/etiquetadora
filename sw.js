@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquetadora-restaurante-v1';
+const CACHE_NAME = 'etiquetadora-restaurante-v2';
 
 self.addEventListener('install', (e) => {
     e.waitUntil(
@@ -6,7 +6,8 @@ self.addEventListener('install', (e) => {
             return cache.addAll([
                 './',
                 './index.html',
-                './manifest.json'
+                './manifest.json',
+                './icon.png'
             ]);
         })
     );
