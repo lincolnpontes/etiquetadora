@@ -1,13 +1,13 @@
 {
   "name": "Etiquetadora",
   "short_name": "Etiquetas",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f2f5",
   "theme_color": "#1565C0",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Aiga_printer.svg/512px-Aiga_printer.svg.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
