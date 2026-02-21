@@ -149,7 +149,7 @@
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             <button class="btn-outline" style="margin: 0; flex: 1; justify-content: center;" onclick="exportarBanco()">⬇️ Exportar</button>
             <button class="btn-outline" style="margin: 0; flex: 1; justify-content: center;" onclick="document.getElementById('fileImport').click()">⬆️ Importar</button>
-            <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBanco(event)">
+            <input type="file" id="fileImport" style="display: none;" accept=".json,.txt" onchange="importarBanco(event)">
         </div>
         <button class="btn-danger" onclick="restaurarPadroes()">Restaurar Sistema (Apagar Tudo)</button>
 
@@ -404,28 +404,31 @@
         }
     }
 
-    // --- FUNÇÕES DE IMPORT/EXPORT (Com API de Compartilhamento) ---
+    // --- FUNÇÕES DE IMPORT/EXPORT ---
     async function exportarBanco() {
         const dataStr = JSON.stringify(db);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const fileName = `backup_etiquetadora_${new Date().getTime()}.json`;
+        // Usando a extensão .txt para o Android liberar o compartilhamento facilmente
+        const fileName = `backup_etiquetadora_${new Date().getTime()}.txt`; 
+        const blob = new Blob([dataStr], { type: "text/plain" });
         
-        // Tenta usar a API de compartilhamento nativa do celular (WhatsApp, Email, etc)
+        // Tenta usar a gaveta de compartilhamento nativa do celular
         if (navigator.canShare) {
             try {
-                const file = new File([blob], fileName, { type: "application/json" });
-                await navigator.share({
-                    files: [file],
-                    title: 'Backup da Etiquetadora',
-                    text: 'Arquivo de backup do sistema de etiquetas.'
-                });
-                return; // Sai da função se o compartilhamento der certo
+                const file = new File([blob], fileName, { type: "text/plain" });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Backup da Etiquetadora',
+                        text: 'Arquivo de backup do sistema.'
+                    });
+                    return; // Se deu certo, sai da função e não faz o download
+                }
             } catch (err) {
-                console.log("Compartilhamento cancelado ou não suportado. Baixando arquivo...");
+                console.log("Compartilhamento nativo cancelado ou falhou. Tentando download normal.");
             }
         }
         
-        // Plano B: Se o celular não suportar o compartilhamento, faz o download normal
+        // Plano B: Faz o download normal se o celular não abrir o painel
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -547,8 +550,7 @@
         if(produto) { 
             abrirModalImprimir(produto.codigo); 
             document.getElementById('buscaCodigo').value = ''; 
-            // Fecha o teclado virtual depois de buscar
-            document.getElementById('buscaCodigo').blur();
+            document.getElementById('buscaCodigo').blur(); // Fecha o teclado virtual
         } else {
             alert("Produto não encontrado!");
         }
@@ -800,11 +802,18 @@
         const ESQUERDA = ESC + "a" + "\x00"; 
         const NEGRITO_ON = ESC + "E" + "\x01";
         const NEGRITO_OFF = ESC + "E" + "\x00";
-        const LETRA_GRANDE = GS + "!" + "\x11"; 
-        const LETRA_NORMAL = GS + "!" + "\x00";
-        const LINHA = "--------------------------------\n";
         
-        // Removemos acentos para a impressora não imprimir símbolos estranhos
+        // Tamanhos
+        const TAM_NORMAL = GS + "!" + "\x00";
+        const TAM_DUPLO_ALT = GS + "!" + "\x01"; // "um pouco maior" (dobro apenas da altura)
+        
+        // Linha contínua
+        const LINHA = "________________________________\n";
+        
+        // Margem (dois espaços)
+        const MARGEM = "  "; 
+        
+        // Função para remover acentos e evitar símbolos estranhos
         const limparTexto = (texto) => {
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         };
@@ -812,35 +821,41 @@
         let etiqueta = INICIA;
         
         // NOME DO PRODUTO (Centralizado, Grande e Negrito)
-        etiqueta += CENTRO + LETRA_GRANDE + NEGRITO_ON;
+        etiqueta += CENTRO + TAM_DUPLO_ALT + NEGRITO_ON;
         etiqueta += limparTexto(produto.nome).toUpperCase() + "\n";
-        etiqueta += LETRA_NORMAL + NEGRITO_OFF;
-        etiqueta += LINHA;
+        etiqueta += TAM_NORMAL + NEGRITO_OFF;
+        etiqueta += LINHA + "\n";
         
-        // DADOS (Alinhados à esquerda)
+        // DADOS (Alinhados à esquerda, com margem)
         etiqueta += ESQUERDA;
-        etiqueta += "Manipulado: " + dataMan + " as " + hora + "\n";
-        etiqueta += "Peso: " + peso + "\n\n";
         
-        // VALIDADE (Centralizado, Grande e Negrito)
-        etiqueta += CENTRO + LETRA_GRANDE + NEGRITO_ON;
-        etiqueta += "VALIDADE:\n" + dataVal + "\n";
-        etiqueta += LETRA_NORMAL + NEGRITO_OFF;
-        etiqueta += LINHA;
+        // Manipulado (Rótulo em Altura Dupla e Negrito | Dado Normal e sem negrito)
+        etiqueta += MARGEM + TAM_DUPLO_ALT + NEGRITO_ON + "Manipulado: ";
+        etiqueta += TAM_NORMAL + NEGRITO_OFF + dataMan + " as " + hora + "\n";
+        
+        // Peso (Rótulo em Altura Dupla e Negrito | Dado Normal e sem negrito)
+        etiqueta += MARGEM + TAM_DUPLO_ALT + NEGRITO_ON + "Peso: ";
+        etiqueta += TAM_NORMAL + NEGRITO_OFF + peso + "\n\n";
+        
+        // VALIDADE (Centralizada, Altura Dupla em vez da gigante que estorvava)
+        etiqueta += CENTRO + TAM_DUPLO_ALT + NEGRITO_ON;
+        etiqueta += "VALIDADE:\n";
+        etiqueta += TAM_NORMAL + NEGRITO_OFF + dataVal + "\n";
+        etiqueta += LINHA + "\n";
         
         // RODAPÉ (Centralizado)
-        etiqueta += CENTRO;
+        etiqueta += CENTRO + TAM_NORMAL + NEGRITO_OFF;
         etiqueta += limparTexto(estabelecimento) + "\n";
         etiqueta += "Op: " + limparTexto(operador) + "\n";
-        etiqueta += "\n\n\n"; // Espaço para a impressora cortar o papel
+        etiqueta += "\n\n\n"; // Espaços para a impressora poder cortar o papel livremente
 
-        // Junta a quantidade de etiquetas pedida em um único disparo
+        // Junta a quantidade de etiquetas
         let impressaoFinal = "";
         for(let i = 0; i < qtd; i++) {
             impressaoFinal += etiqueta;
         }
 
-        // Converte os comandos para formato Base64 para o RawBT repassar diretamente à impressora
+        // Converte os comandos para formato Base64 para o RawBT repassar diretamente
         const codigoBase64 = btoa(impressaoFinal);
         const intent = "intent:base64," + codigoBase64 + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
         
