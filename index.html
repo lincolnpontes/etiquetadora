@@ -97,7 +97,7 @@
     </div>
 
     <div class="search-box">
-        <input type="number" id="buscaCodigo" placeholder="Digitar Código (Ex: 2)">
+        <input type="number" id="buscaCodigo" placeholder="Digitar Código (Ex: 2)" inputmode="numeric" pattern="[0-9]*">
         <button onclick="buscarPorCodigo()">Buscar</button>
     </div>
 
@@ -329,16 +329,17 @@
         
         // Listener para o botão Enter na senha do Admin
         document.getElementById('senhaAdmin').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                validarSenhaAdmin();
-            }
+            if (e.key === 'Enter') validarSenhaAdmin();
         });
         
         // Listener para o botão Enter na senha de Troca de Operador
         document.getElementById('senhaTrocaOperador').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                confirmarTrocaOperador();
-            }
+            if (e.key === 'Enter') confirmarTrocaOperador();
+        });
+        
+        // Listener para o botão Enter na Busca de Código
+        document.getElementById('buscaCodigo').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') buscarPorCodigo();
         });
     }
 
@@ -391,20 +392,44 @@
     }
 
     function restaurarPadroes() {
-        if(confirm("Tem certeza? Isso apagará todos os dados criados.")) {
-            localStorage.removeItem('etiquetadora_db');
-            location.reload();
+        let senhaDigitada = prompt("AÇÃO PERIGOSA! Digite a senha de administrador (1999) para poder continuar:");
+        
+        if (senhaDigitada === "1999") {
+            if(confirm("Tem certeza absoluta? Isso apagará todos os produtos e categorias cadastradas.")) {
+                localStorage.removeItem('etiquetadora_db');
+                location.reload();
+            }
+        } else if (senhaDigitada !== null) {
+            alert("Senha incorreta! Restauração cancelada.");
         }
     }
 
-    // --- FUNÇÕES DE IMPORT/EXPORT ---
-    function exportarBanco() {
+    // --- FUNÇÕES DE IMPORT/EXPORT (Com API de Compartilhamento) ---
+    async function exportarBanco() {
         const dataStr = JSON.stringify(db);
         const blob = new Blob([dataStr], { type: "application/json" });
+        const fileName = `backup_etiquetadora_${new Date().getTime()}.json`;
+        
+        // Tenta usar a API de compartilhamento nativa do celular (WhatsApp, Email, etc)
+        if (navigator.canShare) {
+            try {
+                const file = new File([blob], fileName, { type: "application/json" });
+                await navigator.share({
+                    files: [file],
+                    title: 'Backup da Etiquetadora',
+                    text: 'Arquivo de backup do sistema de etiquetas.'
+                });
+                return; // Sai da função se o compartilhamento der certo
+            } catch (err) {
+                console.log("Compartilhamento cancelado ou não suportado. Baixando arquivo...");
+            }
+        }
+        
+        // Plano B: Se o celular não suportar o compartilhamento, faz o download normal
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `backup_etiquetadora_${new Date().getTime()}.json`;
+        a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -519,8 +544,14 @@
         const cod = parseInt(document.getElementById('buscaCodigo').value);
         if(isNaN(cod)) return;
         const produto = db.produtos.find(p => p.codigo === cod);
-        if(produto) { abrirModalImprimir(produto.codigo); document.getElementById('buscaCodigo').value = ''; } 
-        else alert("Produto não encontrado!");
+        if(produto) { 
+            abrirModalImprimir(produto.codigo); 
+            document.getElementById('buscaCodigo').value = ''; 
+            // Fecha o teclado virtual depois de buscar
+            document.getElementById('buscaCodigo').blur();
+        } else {
+            alert("Produto não encontrado!");
+        }
     }
 
     // --- CRUD GENÉRICO (GESTÃO) ---
@@ -758,24 +789,62 @@
         printWindow.document.close();
     }
 
-    // ENVIO PARA RAWBT
+    // ENVIO PARA RAWBT (COMANDOS NATIVOS DE MÁQUINA ESC/POS)
     function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
-        let textoImpressao = "";
+        
+        // COMANDOS DE MÁQUINA (ESC/POS)
+        const ESC = "\x1B";
+        const GS = "\x1D";
+        const INICIA = ESC + "@"; 
+        const CENTRO = ESC + "a" + "\x01"; 
+        const ESQUERDA = ESC + "a" + "\x00"; 
+        const NEGRITO_ON = ESC + "E" + "\x01";
+        const NEGRITO_OFF = ESC + "E" + "\x00";
+        const LETRA_GRANDE = GS + "!" + "\x11"; 
+        const LETRA_NORMAL = GS + "!" + "\x00";
+        const LINHA = "--------------------------------\n";
+        
+        // Removemos acentos para a impressora não imprimir símbolos estranhos
+        const limparTexto = (texto) => {
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        };
+
+        let etiqueta = INICIA;
+        
+        // NOME DO PRODUTO (Centralizado, Grande e Negrito)
+        etiqueta += CENTRO + LETRA_GRANDE + NEGRITO_ON;
+        etiqueta += limparTexto(produto.nome).toUpperCase() + "\n";
+        etiqueta += LETRA_NORMAL + NEGRITO_OFF;
+        etiqueta += LINHA;
+        
+        // DADOS (Alinhados à esquerda)
+        etiqueta += ESQUERDA;
+        etiqueta += "Manipulado: " + dataMan + " as " + hora + "\n";
+        etiqueta += "Peso: " + peso + "\n\n";
+        
+        // VALIDADE (Centralizado, Grande e Negrito)
+        etiqueta += CENTRO + LETRA_GRANDE + NEGRITO_ON;
+        etiqueta += "VALIDADE:\n" + dataVal + "\n";
+        etiqueta += LETRA_NORMAL + NEGRITO_OFF;
+        etiqueta += LINHA;
+        
+        // RODAPÉ (Centralizado)
+        etiqueta += CENTRO;
+        etiqueta += limparTexto(estabelecimento) + "\n";
+        etiqueta += "Op: " + limparTexto(operador) + "\n";
+        etiqueta += "\n\n\n"; // Espaço para a impressora cortar o papel
+
+        // Junta a quantidade de etiquetas pedida em um único disparo
+        let impressaoFinal = "";
         for(let i = 0; i < qtd; i++) {
-            textoImpressao += "--------------------------------\n";
-            textoImpressao += produto.nome.toUpperCase() + "\n";
-            textoImpressao += "--------------------------------\n";
-            textoImpressao += "<b>Manipulado:</b> " + dataMan + "\n";
-            textoImpressao += "<b>Hora:</b> " + hora + "\n";
-            textoImpressao += "<b>Peso:</b> " + peso + "\n";
-            textoImpressao += "<b>Validade:</b> <big>" + dataVal + "</big>\n";
-            textoImpressao += "--------------------------------\n";
-            textoImpressao += "Operador(a): " + operador + "\n";
-            textoImpressao += estabelecimento + "\n";
-            textoImpressao += "\n\n\n";
+            impressaoFinal += etiqueta;
         }
-        const urlRawBT = "intent:" + encodeURI(textoImpressao) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
-        window.location.href = urlRawBT;
+
+        // Converte os comandos para formato Base64 para o RawBT repassar diretamente à impressora
+        const codigoBase64 = btoa(impressaoFinal);
+        const intent = "intent:base64," + codigoBase64 + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+        
+        window.location.href = intent;
     }
 
     iniciar();
