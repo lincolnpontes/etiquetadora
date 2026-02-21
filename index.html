@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     
     <link rel="manifest" href="manifest.json">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,33 +17,25 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registrado com sucesso!'))
-                .catch(err => console.log('Erro ao registrar Service Worker:', err));
+                navigator.serviceWorker.register('sw.js');
             });
         }
     </script>
 
     <style>
-        /* ESTILOS VISUAIS */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 500px; background-color: #ffffff; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
-        
         .header { background-color: #1565C0; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .header-title { flex: 1; font-size: 18px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .header-actions button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 10px; }
-        
         .operator-bar { background-color: #1976D2; color: white; padding: 8px 15px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
         .operator-bar select { flex: 1; padding: 8px; border-radius: 4px; border: none; font-weight: bold; }
-
         .search-box { background-color: #E3F2FD; padding: 15px; display: flex; gap: 10px; }
         .search-box input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .search-box button { background-color: #1976D2; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        
         .filters { padding: 10px 15px; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #eee; }
         .chip { background-color: #e0e0e0; color: #333; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; border: 2px solid transparent; }
         .chip.active { border: 2px solid #333; opacity: 0.9; }
-        
         .list { padding: 0; margin: 0; list-style: none; padding-bottom: 20px; }
         .item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
         .item:hover { background-color: #f9f9f9; }
@@ -53,8 +44,6 @@
         .item-title { font-weight: bold; font-size: 18px; margin-bottom: 4px; }
         .item-subtitle { color: #666; font-size: 14px; }
         .print-icon { color: #1976D2; font-size: 24px; }
-
-        /* MODAIS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
         .modal { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
         .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #333; border-bottom: 2px solid #1976D2; padding-bottom: 10px; }
@@ -62,22 +51,17 @@
         .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 14px; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         .form-group input[type="color"] { height: 45px; padding: 2px; cursor: pointer; width: 100%; }
-        
         .qtd-control { display: flex; align-items: center; gap: 15px; }
         .qtd-btn { background: #e0e0e0; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 20px; cursor: pointer; }
-        
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        
         .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: #333; font-weight: bold; }
         .btn-action { background: #1976D2; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
         .btn-danger { background: #d32f2f; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; }
         .btn-outline { background: #E3F2FD; color: #1976D2; border: 1px solid #1976D2; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 15px; }
         .btn-outline-icon { font-size: 28px; }
-
         .gerenciar-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
         .gerenciar-info { flex: 1; font-size: 14px; }
         .gerenciar-actions button { background: none; border: none; cursor: pointer; font-size: 20px; margin-left: 10px; }
-        
         .color-preview { display: inline-block; padding: 2px 8px; border-radius: 12px; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc; font-weight: bold; font-size: 12px; }
     </style>
 </head>
@@ -122,7 +106,7 @@
 <div class="modal-overlay" id="modalPainelUnificado">
     <div class="modal">
         <div style="text-align: center; color: #666; font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-            Etiquetadora - v1.1
+            Etiquetadora - v1.2
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1976D2; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="displayEstabelecimento" style="margin: 0; font-size: 18px; color: #333;"></h2>
@@ -288,7 +272,6 @@
 </div>
 
 <script>
-    // --- ESTADO DA APLICAÇÃO E BANCO DE DADOS ---
     let db = carregarBanco();
     let categoriaAtual = null;
     let quantidadeAtual = 1;
@@ -321,7 +304,6 @@
         localStorage.setItem('etiquetadora_db', JSON.stringify(dados));
     }
 
-    // --- INICIALIZAÇÃO ---
     function iniciar() {
         if(!db.configs.estabelecimento) db.configs.estabelecimento = "Nome do Estabelecimento";
         
@@ -330,17 +312,14 @@
         renderizarFiltros();
         renderizarLista();
         
-        // Listener para o botão Enter na senha do Admin
         document.getElementById('senhaAdmin').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') validarSenhaAdmin();
         });
         
-        // Listener para o botão Enter na senha de Troca de Operador
         document.getElementById('senhaTrocaOperador').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') confirmarTrocaOperador();
         });
         
-        // Listener para o botão Enter na Busca de Código
         document.getElementById('buscaCodigo').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') buscarPorCodigo();
         });
@@ -352,7 +331,6 @@
 
     function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // --- PAINEL UNIFICADO (ADMIN + CONFIG) ---
     function abrirLoginAdmin() {
         document.getElementById('senhaAdmin').value = '';
         document.getElementById('modalLoginAdmin').style.display = 'flex';
@@ -407,7 +385,6 @@
         }
     }
 
-    // --- FUNÇÕES DE IMPORT/EXPORT ---
     async function exportarBanco() {
         const dataStr = JSON.stringify(db);
         const fileName = `backup_etiquetadora_${new Date().getTime()}.txt`; 
@@ -425,7 +402,7 @@
                     return; 
                 }
             } catch (err) {
-                console.log("Compartilhamento nativo cancelado ou falhou. Tentando download normal.");
+                console.log("Compartilhamento nativo falhou. Tentando download.");
             }
         }
         
@@ -455,7 +432,6 @@
         reader.readAsText(file);
     }
 
-    // --- OPERADORES (TELA INICIAL) ---
     function renderizarOperadores() {
         const seletor = document.getElementById('seletorOperador');
         seletor.innerHTML = '';
@@ -508,7 +484,6 @@
         fecharModal('modalSenhaOperador');
     }
 
-    // --- RENDERIZAÇÃO E FILTROS ---
     function renderizarFiltros() {
         let html = `<div class="chip ${categoriaAtual === null ? 'active' : ''}" style="${categoriaAtual === null ? 'background:#ccc; color:#000;' : ''}" onclick="filtrarCategoria(null)">TODOS</div>`;
         db.categorias.forEach(cat => { 
@@ -550,13 +525,12 @@
         if(produto) { 
             abrirModalImprimir(produto.codigo); 
             document.getElementById('buscaCodigo').value = ''; 
-            document.getElementById('buscaCodigo').blur(); // Fecha o teclado virtual
+            document.getElementById('buscaCodigo').blur(); 
         } else {
             alert("Produto não encontrado!");
         }
     }
 
-    // --- CRUD GENÉRICO (GESTÃO) ---
     function abrirGerenciar(tipo) {
         fecharModal('modalPainelUnificado');
         fecharModal('modalFormProduto');
@@ -601,7 +575,6 @@
         salvarBancoLocal(); iniciar(); abrirGerenciar(tipo);
     }
 
-    // FORM: Produto
     function abrirFormProduto(codigoOriginal) {
         fecharModal('modalListagem');
         const combo = document.getElementById('prodCategoria');
@@ -643,7 +616,6 @@
         salvarBancoLocal(); iniciar(); abrirGerenciar('produtos');
     }
 
-    // FORM: Categoria
     function abrirFormCategoria(nomeOriginal) {
         fecharModal('modalListagem');
         if(nomeOriginal) {
@@ -678,7 +650,6 @@
         salvarBancoLocal(); iniciar(); abrirGerenciar('categorias');
     }
 
-    // FORM: Operador
     function abrirFormOperador(nomeOriginal) {
         fecharModal('modalListagem');
         if(nomeOriginal) {
@@ -710,7 +681,6 @@
         salvarBancoLocal(); iniciar(); abrirGerenciar('operadores');
     }
 
-    // --- LÓGICA DE IMPRESSÃO ---
     function abrirModalImprimir(codigo) {
         const produto = db.produtos.find(p => p.codigo === codigo);
         quantidadeAtual = 1;
@@ -753,7 +723,6 @@
         }
     }
 
-    // VISUALIZAÇÃO EM PDF
     function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
         let printWindow = window.open('', '', 'width=350,height=500');
         let htmlContent = `
@@ -791,7 +760,6 @@
         printWindow.document.close();
     }
 
-    // ENVIO PARA RAWBT (COMANDOS NATIVOS DE MÁQUINA ESC/POS)
     function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
         
         // COMANDOS DE MÁQUINA (ESC/POS)
@@ -803,16 +771,14 @@
         const NEGRITO_ON = ESC + "E" + "\x01";
         const NEGRITO_OFF = ESC + "E" + "\x00";
         
-        // Tamanhos
         const LETRA_NORMAL = GS + "!" + "\x00";
         const LETRA_GRANDE = GS + "!" + "\x11"; 
         const LETRA_ALTA = GS + "!" + "\x01";   
         
-        // Linha Tracejada (retornado para o modelo original por ser mais seguro na térmica)
         const LINHA = "--------------------------------\n";
         
-        // Margem suave (para centralizar visualmente os dados na etiqueta 5x5)
-        const MARGEM = "  "; 
+        // Margem reforçada (5 espaços) para afastar o texto da borda física da impressora 5x5
+        const MARGEM = "     "; 
         
         const limparTexto = (texto) => {
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -824,9 +790,9 @@
         etiqueta += CENTRO + LETRA_GRANDE + NEGRITO_ON;
         etiqueta += limparTexto(produto.nome).toUpperCase() + "\n";
         etiqueta += LETRA_NORMAL + NEGRITO_OFF;
-        etiqueta += LINHA; // removido a quebra extra para caber na 5x5
+        etiqueta += LINHA; 
         
-        // DADOS (Alinhados à esquerda, com margem e condensados em menos linhas)
+        // DADOS (Alinhados à esquerda, protegidos pela margem)
         etiqueta += ESQUERDA;
         
         etiqueta += MARGEM + "Manipulado: " + dataMan + " - " + hora + "\n";
@@ -834,16 +800,13 @@
         etiqueta += MARGEM + LETRA_ALTA + NEGRITO_ON + "Validade: " + dataVal + "\n";
         etiqueta += LETRA_NORMAL + NEGRITO_OFF;
         
-        // SEPARADOR INFERIOR
+        // SEPARADOR E RODAPÉ (Centralizados)
         etiqueta += CENTRO + LINHA;
-        
-        // RODAPÉ (Centralizado)
-        etiqueta += CENTRO + LETRA_NORMAL + NEGRITO_OFF;
+        etiqueta += LETRA_NORMAL + NEGRITO_OFF;
         etiqueta += limparTexto(estabelecimento) + "\n";
         etiqueta += "Operador(a): " + limparTexto(operador) + "\n";
         
-        // Espaço final cortado (apenas duas linhas de sobra, ideal para bobina 5x5)
-        etiqueta += "\n\n";
+        etiqueta += "\n\n"; // Corte na base
 
         let impressaoFinal = "";
         for(let i = 0; i < qtd; i++) {
