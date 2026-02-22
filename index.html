@@ -66,33 +66,37 @@
         .gerenciar-actions button { background: none; border: none; cursor: pointer; font-size: 20px; margin-left: 10px; }
         .color-preview { display: inline-block; padding: 2px 8px; border-radius: 12px; margin-right: 5px; vertical-align: middle; border: 1px solid #ccc; font-weight: bold; font-size: 12px; }
 
-        /* ESTILOS DA ETIQUETA VISUAL (O GABARITO) */
+        /* ESTILOS DA ETIQUETA VISUAL (O GABARITO PARA RAWBT) */
         #area-impressao-visual {
             position: absolute; 
             top: 0; 
-            left: -2000px; /* Mantém escondido da tela */
-            width: 384px; /* Largura ideal 50mm térmica */
+            left: -2000px; 
+            width: 384px; 
             background: white;
             color: black;
             font-family: 'Arial', sans-serif;
             box-sizing: border-box;
-            border: 4px solid black; /* Borda da etiqueta inteira */
-            padding: 12px;
+            border: 4px solid black; 
+            padding: 15px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
         .etiqueta-header { text-align: center; font-weight: 900; font-size: 26px; text-transform: uppercase; margin-bottom: 5px; line-height: 1.1; }
-        .etiqueta-linha { border-top: 4px solid black; margin: 12px 0; } /* Linha grossa substituta dos underscores */
+        .etiqueta-linha { border-top: 3px solid black; margin: 12px 0; }
         .etiqueta-body { font-size: 19px; line-height: 1.5; padding: 0 5px; }
         .etiqueta-row { display: flex; margin-bottom: 5px; }
         .etiqueta-label { font-weight: bold; margin-right: 8px; }
         
-        /* Validade Gigante */
+        /* Validade Maior e Negrito */
+        .etiqueta-val-container { display: flex; align-items: center; margin-top: 15px; }
+        .etiqueta-val-label { font-weight: bold; font-size: 22px; margin-right: 10px; }
         .etiqueta-val-destaque { font-size: 28px; font-weight: 900; }
         
-        /* Rodapé Centralizado */
-        .etiqueta-footer { text-align: center; font-size: 20px; font-weight: bold; padding-bottom: 5px; }
+        /* Rodapé Perfeitamente Centralizado */
+        .etiqueta-footer { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .etiqueta-restaurante { font-size: 20px; font-weight: bold; }
+        .etiqueta-operador { font-size: 18px; font-weight: normal; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -109,15 +113,15 @@
             <span class="etiqueta-label">Peso:</span>
             <span id="viz-peso">0 g</span>
         </div>
-        <div class="etiqueta-row" style="align-items: center; margin-top: 15px;">
-            <span class="etiqueta-label" style="font-size: 24px;">VALIDADE:</span>
+        <div class="etiqueta-val-container">
+            <span class="etiqueta-val-label">VALIDADE:</span>
             <span class="etiqueta-val-destaque" id="viz-data-val">00/00/0000</span>
         </div>
     </div>
     <div class="etiqueta-linha"></div>
     <div class="etiqueta-footer">
-        <div id="viz-estabelecimento">Restaurante</div>
-        <div style="font-weight: normal; font-size: 16px; margin-top: 8px;">Operador(a): <span id="viz-operador">Nome</span></div>
+        <div class="etiqueta-restaurante" id="viz-estabelecimento">Restaurante</div>
+        <div class="etiqueta-operador">Operador(a): <span id="viz-operador" style="font-weight: bold;">Nome</span></div>
     </div>
 </div>
 
@@ -160,7 +164,7 @@
 <div class="modal-overlay" id="modalPainelUnificado">
     <div class="modal">
         <div style="text-align: center; color: #666; font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-            Etiquetadora - v1.5 (Imagem Otimizada)
+            Etiquetadora - v1.6 (Layout Final)
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1976D2; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="displayEstabelecimento" style="margin: 0; font-size: 18px; color: #333;"></h2>
@@ -782,23 +786,50 @@
         }
     }
 
+    // --- PDF AGORA É ESPELHO FIEL DA IMAGEM ---
     function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
-        let printWindow = window.open('', '', 'width=350,height=500');
+        let printWindow = window.open('', '', 'width=450,height=600');
         let htmlContent = `
             <html><head><style>
-                body { font-family: sans-serif; padding: 20px; }
-                .etiqueta { border: 2px solid black; padding: 10px; margin-bottom: 20px; width: 300px; }
-                h2 { margin: 0 0 10px 0; text-align: center; border-bottom: 2px solid black; padding-bottom: 5px; }
+                body { font-family: 'Arial', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; background: #e0e0e0; margin: 0; }
+                .etiqueta { background: white; border: 4px solid black; padding: 15px; margin-bottom: 20px; width: 384px; box-sizing: border-box; }
+                .etiqueta-header { text-align: center; font-weight: 900; font-size: 26px; text-transform: uppercase; margin-bottom: 5px; line-height: 1.1; }
+                .etiqueta-linha { border-top: 3px solid black; margin: 12px 0; }
+                .etiqueta-body { font-size: 19px; line-height: 1.5; padding: 0 5px; }
+                .etiqueta-row { display: flex; margin-bottom: 5px; }
+                .etiqueta-label { font-weight: bold; margin-right: 8px; }
+                .etiqueta-val-container { display: flex; align-items: center; margin-top: 15px; }
+                .etiqueta-val-label { font-weight: bold; font-size: 22px; margin-right: 10px; }
+                .etiqueta-val-destaque { font-size: 28px; font-weight: 900; }
+                .etiqueta-footer { text-align: center; display: flex; flex-direction: column; align-items: center; }
+                .etiqueta-restaurante { font-size: 20px; font-weight: bold; }
+                .etiqueta-operador { font-size: 18px; font-weight: normal; margin-top: 5px; }
             </style></head><body>
         `;
         for(let i = 0; i < qtd; i++) {
             htmlContent += `
                 <div class="etiqueta">
-                    <h2>${produto.nome}</h2>
-                    <p><b>Manipulado:</b> ${dataMan} - ${hora}</p>
-                    <p><b>Peso:</b> ${peso}</p>
-                    <p><b>Validade:</b> ${dataVal}</p>
-                    <p style="text-align:center; margin-top:10px; border-top: 1px solid black; padding-top:5px;">${estabelecimento} - Op: ${operador}</p>
+                    <div class="etiqueta-header">${produto.nome}</div>
+                    <div class="etiqueta-linha"></div>
+                    <div class="etiqueta-body">
+                        <div class="etiqueta-row">
+                            <span class="etiqueta-label">Manipulado:</span>
+                            <span>${dataMan} - ${hora}</span>
+                        </div>
+                        <div class="etiqueta-row">
+                            <span class="etiqueta-label">Peso:</span>
+                            <span>${peso}</span>
+                        </div>
+                        <div class="etiqueta-val-container">
+                            <span class="etiqueta-val-label">VALIDADE:</span>
+                            <span class="etiqueta-val-destaque">${dataVal}</span>
+                        </div>
+                    </div>
+                    <div class="etiqueta-linha"></div>
+                    <div class="etiqueta-footer">
+                        <div class="etiqueta-restaurante">${estabelecimento}</div>
+                        <div class="etiqueta-operador">Operador(a): <span style="font-weight: bold;">${operador}</span></div>
+                    </div>
                 </div>
             `;
         }
@@ -807,10 +838,9 @@
         printWindow.document.close();
     }
 
-    // --- NOVA FUNÇÃO DE ENVIO DE IMAGEM CORRIGIDA E EM LOTE (v1.5) ---
+    // --- FUNÇÃO DE IMAGEM PARA RAWBT ---
     function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento, btnElement) {
         
-        // 1. Preenche os dados visuais
         document.getElementById('viz-nome-produto').innerText = produto.nome;
         document.getElementById('viz-data-man').innerText = `${dataMan} - ${hora}`;
         document.getElementById('viz-peso').innerText = peso;
@@ -820,38 +850,30 @@
 
         const gabarito = document.getElementById('area-impressao-visual');
 
-        // 2. Tira a "foto" original
         html2canvas(gabarito, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
             
-            // 3. Cria um quadro maior para empilhar as etiquetas (se for mais de 1)
-            const gap = 40; // Espaço em branco entre as etiquetas para facilitar o corte
+            const gap = 40; 
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = canvas.width;
             finalCanvas.height = (canvas.height + gap) * qtd;
             const ctx = finalCanvas.getContext('2d');
             
-            // Pinta o fundo todo de branco
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
             
-            // Cola a etiqueta a quantidade de vezes pedida
             for(let i = 0; i < qtd; i++) {
                 ctx.drawImage(canvas, 0, i * (canvas.height + gap));
             }
 
-            // 4. Converte a foto final
             const imgDataUrl = finalCanvas.toDataURL("image/png");
             const base64Raw = imgDataUrl.replace(/^data:image\/(png|jpg);base64,/, "");
             
-            // 5. O Envelope Correto! 
-            // Usamos o scheme "rawbt" que o Android reconhece como sendo EXCLUSIVO do app de impressão.
             const intent = "intent:base64," + base64Raw + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
             
             btnElement.innerText = "🖨️ IMPRIMIR";
             btnElement.disabled = false;
             fecharModal('modalImprimir');
             
-            // Dispara para a impressora
             window.location.href = intent;
             
         }).catch(err => {
