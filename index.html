@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     
     <link rel="manifest" href="manifest.json">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,7 +25,6 @@
     </script>
 
     <style>
-        /* ESTILOS VISUAIS DO APP (Mesmo de antes) */
         body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 500px; background-color: #ffffff; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
         .header { background-color: #1565C0; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -70,27 +68,26 @@
 
         /* ESTILOS DA ETIQUETA VISUAL (O GABARITO) */
         #area-impressao-visual {
-            position: fixed; top: -9999px; left: 0; /* Esconde da tela do celular */
-            width: 384px; /* Largura padrão para 50mm/58mm (203dpi) */
+            position: absolute; 
+            top: 0; 
+            left: -2000px; /* Esconde da tela do celular, mas o canvas consegue ler */
+            width: 384px; /* Largura padrão para 50mm em 203dpi */
             background: white;
             color: black;
-            font-family: 'Helvetica', 'Arial', sans-serif; /* Fontes bonitas */
+            font-family: 'Arial', sans-serif;
             box-sizing: border-box;
-            /* BORDA GROSSA EXTRENA */
-            border: 4px solid black; 
-            /* MARGEM DE SEGURANÇA DE 0,2cm (aprox 12px) */
-            padding: 12px;
+            border: 4px solid black; /* Borda externa grossa */
+            padding: 12px; /* Margem de segurança */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-        .etiqueta-header { text-align: center; font-weight: 900; font-size: 24px; text-transform: uppercase; margin-bottom: 10px; line-height: 1.1; }
-        /* LINHAS GROSSAS INTERNAS */
+        .etiqueta-header { text-align: center; font-weight: 900; font-size: 26px; text-transform: uppercase; margin-bottom: 10px; line-height: 1.1; }
         .etiqueta-divider { border-top: 3px solid black; margin: 10px 0; }
-        .etiqueta-body { font-size: 18px; line-height: 1.4; }
+        .etiqueta-body { font-size: 19px; line-height: 1.5; }
         .etiqueta-row { display: flex; margin-bottom: 5px; }
         .etiqueta-label { font-weight: bold; margin-right: 8px; }
-        .etiqueta-val-destaque { font-size: 20px; font-weight: 900; }
+        .etiqueta-val-destaque { font-size: 22px; font-weight: 900; }
         .etiqueta-footer { text-align: center; font-size: 16px; font-weight: bold; }
     </style>
 </head>
@@ -109,14 +106,14 @@
             <span id="viz-peso">0 g</span>
         </div>
         <div class="etiqueta-row" style="align-items: center; margin-top: 8px;">
-            <span class="etiqueta-label" style="font-size: 20px;">VALIDADE:</span>
+            <span class="etiqueta-label" style="font-size: 22px;">VALIDADE:</span>
             <span class="etiqueta-val-destaque" id="viz-data-val">00/00/0000</span>
         </div>
     </div>
     <div class="etiqueta-divider"></div>
     <div class="etiqueta-footer">
-        <div id="viz-estabelecimento">Restaurante</div>
-        <div style="font-weight: normal; font-size: 14px; margin-top: 5px;">Operador(a): <span id="viz-operador">Nome</span></div>
+        <div id="viz-estabelecimento" style="font-size: 18px;">Restaurante</div>
+        <div style="font-weight: normal; font-size: 15px; margin-top: 5px;">Operador(a): <span id="viz-operador">Nome</span></div>
     </div>
 </div>
 
@@ -159,7 +156,7 @@
 <div class="modal-overlay" id="modalPainelUnificado">
     <div class="modal">
         <div style="text-align: center; color: #666; font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-            Etiquetadora - v1.3 (Imagem)
+            Etiquetadora - v1.4 (Imagem)
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1976D2; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="displayEstabelecimento" style="margin: 0; font-size: 18px; color: #333;"></h2>
@@ -319,7 +316,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn-cancel" onclick="fecharModal('modalImprimir')">Cancelar</button>
-            <button class="btn-action" onclick="processarImpressao()">🖨️ IMPRIMIR</button>
+            <button class="btn-action" id="btnProcessarImpressao" onclick="processarImpressao()">🖨️ IMPRIMIR</button>
         </div>
     </div>
 </div>
@@ -752,6 +749,10 @@
     }
 
     function processarImpressao() {
+        const btn = document.getElementById('btnProcessarImpressao');
+        btn.innerText = "Aguarde...";
+        btn.disabled = true;
+
         const codigo = parseInt(document.getElementById('imprimirCodigoProduto').value);
         const produto = db.produtos.find(p => p.codigo === codigo);
         const inputPeso = document.getElementById('imprimirPeso').value.trim();
@@ -767,17 +768,17 @@
         const dataManipulacaoBR = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
         const horaBR = `${String(hoje.getHours()).padStart(2, '0')}:${String(hoje.getMinutes()).padStart(2, '0')}`;
 
-        fecharModal('modalImprimir');
-
         if(db.configs.modo === 'pdf') {
+            fecharModal('modalImprimir');
             gerarEtiquetaPDF(produto, pesoFormatado, dataManipulacaoBR, horaBR, dataValidadeBR, quantidadeAtual, operador, estabelecimento);
+            btn.innerText = "🖨️ IMPRIMIR";
+            btn.disabled = false;
         } else {
-            enviarParaRawBT(produto, pesoFormatado, dataManipulacaoBR, horaBR, dataValidadeBR, quantidadeAtual, operador, estabelecimento);
+            enviarParaRawBT(produto, pesoFormatado, dataManipulacaoBR, horaBR, dataValidadeBR, quantidadeAtual, operador, estabelecimento, btn);
         }
     }
 
     function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
-        // Função simplificada para PDF, focando apenas nos dados, já que o foco agora é a imagem para RawBT
         let printWindow = window.open('', '', 'width=350,height=500');
         let htmlContent = `
             <html><head><style>
@@ -802,9 +803,10 @@
         printWindow.document.close();
     }
 
-    // --- NOVA FUNÇÃO DE ENVIO (MODO IMAGEM/CAPRICHO) ---
-    function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
-        // 1. Preenche o gabarito invisível com os dados
+    // --- A NOVA FUNÇÃO DE ENVIO CORRIGIDA (MODO IMAGEM) ---
+    function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento, btnElement) {
+        
+        // 1. Alimenta o gabarito invisível
         document.getElementById('viz-nome-produto').innerText = produto.nome;
         document.getElementById('viz-data-man').innerText = `${dataMan} - ${hora}`;
         document.getElementById('viz-peso').innerText = peso;
@@ -814,21 +816,26 @@
 
         const gabarito = document.getElementById('area-impressao-visual');
 
-        // 2. Chama o fotógrafo (html2canvas) para tirar um print do gabarito
-        html2canvas(gabarito, { scale: 2 }).then(canvas => {
-            // A escala 2 aumenta a qualidade da imagem para ficar nítida na impressão
+        // 2. Tira a foto da etiqueta
+        html2canvas(gabarito, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
             const imgDataUrl = canvas.toDataURL("image/png");
-            // Remove o cabeçalho da imagem para sobrar só o código puro
-            const base64Raw = imgDataUrl.replace(/^data:image\/(png|jpg);base64,/, "");
-
-            // 3. Monta o comando para o RawBT imprimir a imagem
-            const intent = `intent:#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.base64=${base64Raw};end;`;
             
-            // Loop para múltiplas cópias
-            for(let i = 0; i < qtd; i++) {
-                // Um pequeno delay entre impressões para não engasgar o app com imagens pesadas
-                setTimeout(() => { window.location.href = intent; }, i * 500);
-            }
+            // 3. Monta o envelope correto para imagem no RawBT
+            // Usamos ACTION_VIEW, apontando para o pacote e passando as cópias (i.copies ou S.copies)
+            const intent = "intent:" + imgDataUrl + "#Intent;action=android.intent.action.VIEW;package=ru.a402d.rawbtprinter;i.copies=" + qtd + ";S.copies=" + qtd + ";end;";
+            
+            // Retorna o botão ao normal e fecha a tela
+            btnElement.innerText = "🖨️ IMPRIMIR";
+            btnElement.disabled = false;
+            fecharModal('modalImprimir');
+            
+            // Envia para impressão
+            window.location.href = intent;
+            
+        }).catch(err => {
+            alert("Erro ao gerar a imagem da etiqueta.");
+            btnElement.innerText = "🖨️ IMPRIMIR";
+            btnElement.disabled = false;
         });
     }
 
