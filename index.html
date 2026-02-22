@@ -88,12 +88,10 @@
         .etiqueta-row { display: flex; margin-bottom: 5px; }
         .etiqueta-label { font-weight: bold; margin-right: 8px; }
         
-        /* Validade Maior e Negrito */
         .etiqueta-val-container { display: flex; align-items: center; margin-top: 15px; }
         .etiqueta-val-label { font-weight: bold; font-size: 22px; margin-right: 10px; }
         .etiqueta-val-destaque { font-size: 28px; font-weight: 900; }
         
-        /* Rodapé Perfeitamente Centralizado */
         .etiqueta-footer { text-align: center; display: flex; flex-direction: column; align-items: center; }
         .etiqueta-restaurante { font-size: 20px; font-weight: bold; }
         .etiqueta-operador { font-size: 18px; font-weight: normal; margin-top: 5px; }
@@ -164,7 +162,7 @@
 <div class="modal-overlay" id="modalPainelUnificado">
     <div class="modal">
         <div style="text-align: center; color: #666; font-size: 13px; font-weight: bold; margin-bottom: 5px;">
-            Etiquetadora - v1.6 (Layout Final)
+            Etiquetadora - v1.7 (Correção Imagem)
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1976D2; padding-bottom: 10px; margin-bottom: 20px;">
             <h2 id="displayEstabelecimento" style="margin: 0; font-size: 18px; color: #333;"></h2>
@@ -786,7 +784,6 @@
         }
     }
 
-    // --- PDF AGORA É ESPELHO FIEL DA IMAGEM ---
     function gerarEtiquetaPDF(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento) {
         let printWindow = window.open('', '', 'width=450,height=600');
         let htmlContent = `
@@ -838,7 +835,6 @@
         printWindow.document.close();
     }
 
-    // --- FUNÇÃO DE IMAGEM PARA RAWBT ---
     function enviarParaRawBT(produto, peso, dataMan, hora, dataVal, qtd, operador, estabelecimento, btnElement) {
         
         document.getElementById('viz-nome-produto').innerText = produto.nome;
@@ -865,10 +861,10 @@
                 ctx.drawImage(canvas, 0, i * (canvas.height + gap));
             }
 
+            // A SOLUÇÃO: Mantém o "data:image/png;base64," na string para o RawBT reconhecer a foto
             const imgDataUrl = finalCanvas.toDataURL("image/png");
-            const base64Raw = imgDataUrl.replace(/^data:image\/(png|jpg);base64,/, "");
             
-            const intent = "intent:base64," + base64Raw + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+            const intent = "intent:" + imgDataUrl + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
             
             btnElement.innerText = "🖨️ IMPRIMIR";
             btnElement.disabled = false;
